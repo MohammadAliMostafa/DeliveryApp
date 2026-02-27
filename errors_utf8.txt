@@ -1,0 +1,33 @@
+﻿Analyzing flutter_application_1...                              
+
+   info - Unnecessary use of multiple underscores - lib\screens\customer\all_offers_screen.dart:119:58 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\all_offers_screen.dart:124:58 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\all_offers_screen.dart:124:62 - unnecessary_underscores
+   info - Statements in an if should be enclosed in a block - lib\screens\customer\favorites_screen.dart:38:7 - curly_braces_in_flow_control_structures
+   info - Unnecessary use of multiple underscores - lib\screens\customer\home_screen.dart:409:62 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\home_screen.dart:414:62 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\home_screen.dart:414:66 - unnecessary_underscores
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\customer\order_history_screen.dart:371:13 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\customer\order_history_screen.dart:373:30 - use_build_context_synchronously
+   info - Unnecessary use of multiple underscores - lib\screens\customer\restaurant_detail_screen.dart:127:40 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\restaurant_detail_screen.dart:129:40 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\restaurant_detail_screen.dart:129:44 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\restaurant_detail_screen.dart:738:56 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\restaurant_detail_screen.dart:749:56 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\restaurant_detail_screen.dart:749:60 - unnecessary_underscores
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\customer\restaurant_detail_screen.dart:1061:37 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\customer\restaurant_detail_screen.dart:1063:25 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\customer\restaurant_detail_screen.dart:1071:25 - use_build_context_synchronously
+   info - Unnecessary use of multiple underscores - lib\screens\customer\restaurant_detail_screen.dart:1205:50 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\restaurant_detail_screen.dart:1210:50 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\restaurant_detail_screen.dart:1210:54 - unnecessary_underscores
+   info - 'value' is deprecated and shouldn't be used. Use component accessors like .r or .g, or toARGB32 for an explicit conversion - lib\screens\restaurant\restaurant_shell.dart:1513:68 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use component accessors like .r or .g, or toARGB32 for an explicit conversion - lib\screens\restaurant\restaurant_shell.dart:1516:69 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\screens\restaurant\restaurant_shell.dart:1730:25 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\screens\restaurant\restaurant_shell.dart:1748:13 - use_build_context_synchronously
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\screens\restaurant\restaurant_shell.dart:2191:13 - deprecated_member_use
+   info - Statements in an if should be enclosed in a block - lib\screens\restaurant\restaurant_shell.dart:2225:27 - curly_braces_in_flow_control_structures
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\restaurant\restaurant_shell.dart:2225:48 - use_build_context_synchronously
+   info - Statements in an if should be enclosed in a block - lib\screens\restaurant\restaurant_shell.dart:2228:27 - curly_braces_in_flow_control_structures
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\restaurant\restaurant_shell.dart:2229:29 - use_build_context_synchronously
+

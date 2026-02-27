@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "201127488522",
+    "project_id": "foodhub-5e36a",
+    "storage_bucket": "foodhub-5e36a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:201127488522:android:48fcb797956ece16c9c3f3",
+        "android_client_info": {
+          "package_name": "com.alimad.foodhub"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "201127488522-9ec1hohu6hriurn8qo1v99har8a87keq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.alimad.foodhub",
+            "certificate_hash": "81a9dff2a5b9f5ef1d9e367815a1fd6c43411522"
+          }
+        },
+        {
+          "client_id": "201127488522-2oti854391nja6j6qa6mogb77chghdms.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjSqmJdQJxyvvdPIRtlRL8XWN4EbTF2tE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "201127488522-2oti854391nja6j6qa6mogb77chghdms.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "201127488522-f5eh4btdonjqdfhnh555mnba47h2pin1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.alimad.foodhub"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

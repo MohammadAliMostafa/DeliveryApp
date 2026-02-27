@@ -1,0 +1,106 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if user is accessing their own document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Check if user has a specific role
+    function hasRole(role) {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == role;
+    }
+
+    // Check if user is the owner of the restaurant
+    function isRestaurantOwner(restaurantId) {
+      return isAuthenticated() && restaurantId != '' &&
+             exists(/databases/$(database)/documents/restaurants/$(restaurantId)) &&
+             get(/databases/$(database)/documents/restaurants/$(restaurantId)).data.get('ownerId', '') == request.auth.uid;
+    }
+
+    // --- Collection Rules ---
+
+    // Users: Users can read/write their own profile
+    // Public read for basic info (like name/avatar) is often needed for UI
+    match /users/{userId} {
+      allow read: if isAuthenticated(); 
+      allow write: if isOwner(userId);
+    }
+
+    // Restaurants: Public read, Owner write
+    match /restaurants/{restaurantId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        resource.data.ownerId == request.auth.uid || 
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'totalRatings']))
+      );
+      allow delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+    }
+
+    // Menu Items: Public read, Restaurant Owner write
+    match /menu_items/{itemId} {
+      allow read: if true;
+      allow create: if isRestaurantOwner(request.resource.data.restaurantId);
+      allow update: if isRestaurantOwner(resource.data.restaurantId);
+      allow delete: if isRestaurantOwner(resource.data.restaurantId);
+    }
+
+    // Orders: Complex access control
+    match /orders/{orderId} {
+      // Create: Any authenticated customer can place an order
+      allow create: if isAuthenticated() && request.resource.data.customerId == request.auth.uid;
+
+      // Read: Customer, Driver (if assigned or looking for work), Restaurant Owner
+      allow read: if isAuthenticated() && (
+        resource.data.customerId == request.auth.uid || // The customer
+        resource.data.driverId == request.auth.uid ||   // The assigned driver
+        (resource.data.driverId == null && hasRole('driver')) || // Available orders for drivers
+        isRestaurantOwner(resource.data.restaurantId)   // The restaurant owner
+      );
+
+      // Update: Strict access control
+      allow update: if isAuthenticated() && (
+        // Allow customer to cancel if 'placed', OR to soft-delete by ONLY updating 'hiddenByCustomer' and 'updatedAt'
+        (resource.data.get('customerId', '') == request.auth.uid && (
+          resource.data.get('status', '') == 'placed' || 
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hiddenByCustomer', 'updatedAt'])
+        )) ||
+        // Allow if restaurant owner
+        isRestaurantOwner(resource.data.get('restaurantId', '')) || 
+        // Allow assigned driver to update (like location)
+        (resource.data.get('driverId', '') == request.auth.uid) ||   
+        // Allow driver to assign themselves
+        (resource.data.get('driverId', null) == null && request.resource.data.get('driverId', '') == request.auth.uid && hasRole('driver')) 
+      );
+
+      // Delete: Customer can delete their own orders (e.g. history cleanup)
+      allow delete: if isAuthenticated() && resource.data.customerId == request.auth.uid;
+    }
+    
+    // Offers: Public read, Restaurant Owner write
+    match /offers/{offerId} {
+        allow read: if true;
+        allow create, update: if isAuthenticated();
+        allow delete: if isAuthenticated();
+    }
+
+    // Ratings: User can create/update their own
+    match /ratings/{ratingId} {
+        allow read: if true;
+        allow create, update: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+        allow delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+  }
+}
