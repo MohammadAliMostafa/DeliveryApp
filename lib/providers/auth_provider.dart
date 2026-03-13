@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -11,6 +12,7 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = true;
   String? _error;
   StreamSubscription<User?>? _authSub;
+  StreamSubscription<String>? _tokenRefreshSub;
 
   UserModel? get user => _user;
   bool get isLoading => _isLoading;
@@ -20,6 +22,17 @@ class AuthProvider extends ChangeNotifier {
 
   AuthProvider() {
     _init();
+    _setupTokenRefreshListener();
+  }
+
+  void _setupTokenRefreshListener() {
+    _tokenRefreshSub = NotificationService().onTokenRefresh.listen((token) {
+      if (_user != null) {
+        _authService.updateUserField(_user!.uid, {'fcmToken': token});
+        _user = _user!.copyWith(fcmToken: token);
+        notifyListeners();
+      }
+    });
   }
 
   void _init() {
@@ -27,6 +40,15 @@ class AuthProvider extends ChangeNotifier {
       if (firebaseUser != null) {
         try {
           _user = await _authService.getUserProfile(firebaseUser.uid);
+
+          final String? token = await NotificationService().getToken();
+          if (token != null && _user?.fcmToken != token) {
+            await _authService.updateUserField(firebaseUser.uid, {
+              'fcmToken': token,
+            });
+            _user = _user!.copyWith(fcmToken: token);
+          }
+
           _error = null;
         } catch (e) {
           _user = null;
@@ -46,6 +68,7 @@ class AuthProvider extends ChangeNotifier {
     required String name,
     required String role,
     String phone = '',
+    Map<String, dynamic>? formData,
   }) async {
     _isLoading = true;
     _error = null;
@@ -58,6 +81,7 @@ class AuthProvider extends ChangeNotifier {
         name: name,
         role: role,
         phone: phone,
+        formData: formData,
       );
     } on FirebaseAuthException catch (e) {
       _error = _mapAuthError(e.code);
@@ -174,6 +198,20 @@ class AuthProvider extends ChangeNotifier {
     await updateProfile(updatedUser);
   }
 
+  Future<void> toggleFavoriteOffer(String offerId) async {
+    if (_user == null) return;
+
+    final updatedFavorites = List<String>.from(_user!.favoriteOfferIds);
+    if (updatedFavorites.contains(offerId)) {
+      updatedFavorites.remove(offerId);
+    } else {
+      updatedFavorites.add(offerId);
+    }
+
+    final updatedUser = _user!.copyWith(favoriteOfferIds: updatedFavorites);
+    await updateProfile(updatedUser);
+  }
+
   void clearError() {
     _error = null;
     notifyListeners();
@@ -201,6 +239,7 @@ class AuthProvider extends ChangeNotifier {
   @override
   void dispose() {
     _authSub?.cancel();
+    _tokenRefreshSub?.cancel();
     super.dispose();
   }
 }

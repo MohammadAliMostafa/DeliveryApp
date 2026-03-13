@@ -68,7 +68,6 @@ class OrderModel {
   final List<CartItem> items;
   final double subtotal;
   final double deliveryFee;
-  final double serviceFee;
   final double total;
   final double? deliveryLatitude;
   final double? deliveryLongitude;
@@ -94,7 +93,6 @@ class OrderModel {
     required this.items,
     required this.subtotal,
     this.deliveryFee = 2.99,
-    this.serviceFee = 1.50,
     required this.total,
     this.deliveryLatitude,
     this.deliveryLongitude,
@@ -123,7 +121,6 @@ class OrderModel {
       'items': items.map((e) => e.toMap()).toList(),
       'subtotal': subtotal,
       'deliveryFee': deliveryFee,
-      'serviceFee': serviceFee,
       'total': total,
       'deliveryLatitude': deliveryLatitude,
       'deliveryLongitude': deliveryLongitude,
@@ -155,8 +152,7 @@ class OrderModel {
               .toList() ??
           [],
       subtotal: (map['subtotal'] as num?)?.toDouble() ?? 0.0,
-      deliveryFee: (map['deliveryFee'] as num?)?.toDouble() ?? 2.99,
-      serviceFee: (map['serviceFee'] as num?)?.toDouble() ?? 1.50,
+      deliveryFee: (map['deliveryFee'] as num?)?.toDouble() ?? 0.0,
       total: (map['total'] as num?)?.toDouble() ?? 0.0,
       deliveryLatitude: (map['deliveryLatitude'] as num?)?.toDouble(),
       deliveryLongitude: (map['deliveryLongitude'] as num?)?.toDouble(),
@@ -181,6 +177,8 @@ class OrderModel {
     double? driverLongitude,
     bool? hiddenByCustomer,
     DateTime? updatedAt,
+    double? deliveryFee,
+    double? total,
   }) {
     return OrderModel(
       id: id,
@@ -193,9 +191,8 @@ class OrderModel {
       status: status ?? this.status,
       items: items,
       subtotal: subtotal,
-      deliveryFee: deliveryFee,
-      serviceFee: serviceFee,
-      total: total,
+      deliveryFee: deliveryFee ?? this.deliveryFee,
+      total: total ?? this.total,
       deliveryLatitude: deliveryLatitude,
       deliveryLongitude: deliveryLongitude,
       deliveryAddress: deliveryAddress,

@@ -6,6 +6,7 @@ import '../../providers/restaurant_provider.dart';
 import '../../utils/theme.dart';
 import '../../utils/helpers.dart';
 import 'restaurant_detail_screen.dart';
+import 'store_detail_screen.dart';
 
 class AllOffersScreen extends StatelessWidget {
   const AllOffersScreen({super.key});
@@ -78,9 +79,12 @@ class AllOffersScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => RestaurantDetailScreen(
-                            highlightOfferId: offer.id,
-                          ),
+                          builder: (_) =>
+                              restaurant.businessType == 'restaurant'
+                              ? RestaurantDetailScreen(
+                                  highlightOfferId: offer.id,
+                                )
+                              : StoreDetailScreen(highlightOfferId: offer.id),
                         ),
                       );
                     }
@@ -117,42 +121,80 @@ class AllOffersScreen extends StatelessWidget {
                             // Offer Image
                             Expanded(
                               flex: 5,
-                              child: ClipRRect(
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(20),
-                                  topRight: Radius.circular(20),
-                                ),
-                                child: offer.imageUrl.isNotEmpty
-                                    ? CachedNetworkImage(
-                                        imageUrl: offer.imageUrl,
-                                        width: double.infinity,
-                                        fit: BoxFit.cover,
-                                        placeholder: (_, __) => Container(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.2,
+                              child: Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: const BorderRadius.only(
+                                      topLeft: Radius.circular(20),
+                                      topRight: Radius.circular(20),
+                                    ),
+                                    child: offer.imageUrl.isNotEmpty
+                                        ? CachedNetworkImage(
+                                            imageUrl: offer.imageUrl,
+                                            width: double.infinity,
+                                            fit: BoxFit.cover,
+                                            placeholder: (_, __) => Container(
+                                              color: Colors.white.withValues(
+                                                alpha: 0.2,
+                                              ),
+                                            ),
+                                            errorWidget: (_, __, ___) =>
+                                                Container(
+                                                  color: Colors.white
+                                                      .withValues(alpha: 0.2),
+                                                  child: const Icon(
+                                                    Icons.restaurant,
+                                                    color: Colors.white54,
+                                                  ),
+                                                ),
+                                          )
+                                        : Container(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.1,
+                                            ),
+                                            width: double.infinity,
+                                            child: const Icon(
+                                              Icons.restaurant,
+                                              color: Colors.white54,
+                                              size: 40,
+                                            ),
                                           ),
+                                  ),
+                                  if (offer.hasDiscount)
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 3,
                                         ),
-                                        errorWidget: (_, __, ___) => Container(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.2,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            6,
                                           ),
-                                          child: const Icon(
-                                            Icons.restaurant,
-                                            color: Colors.white54,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(
+                                                alpha: 0.1,
+                                              ),
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Text(
+                                          '-${offer.discountPercentage}%',
+                                          style: TextStyle(
+                                            color: cardColor,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w900,
                                           ),
-                                        ),
-                                      )
-                                    : Container(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.1,
-                                        ),
-                                        width: double.infinity,
-                                        child: const Icon(
-                                          Icons.restaurant,
-                                          color: Colors.white54,
-                                          size: 40,
                                         ),
                                       ),
+                                    ),
+                                ],
                               ),
                             ),
                             // Content
@@ -227,6 +269,19 @@ class AllOffersScreen extends StatelessWidget {
                                     ),
                                     const SizedBox(height: 4),
                                     // Price
+                                    if (offer.hasDiscount)
+                                      Text(
+                                        Helpers.formatPrice(
+                                          offer.originalPrice,
+                                        ),
+                                        style: TextStyle(
+                                          decoration:
+                                              TextDecoration.lineThrough,
+                                          color: subTextColor,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    const SizedBox(height: 2),
                                     Container(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 8,

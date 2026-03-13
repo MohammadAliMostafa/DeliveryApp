@@ -15,9 +15,9 @@ class FastestRestaurantsScreen extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
     final user = auth.user;
 
-    // 1. Sort open restaurants by distance + prep time
+    // 1. Sort open restaurants by distance + prep time (restaurant type only)
     final openRestaurants = restProv.restaurants
-        .where((r) => r.isOpen)
+        .where((r) => r.isOpen && r.businessType == 'restaurant')
         .toList();
 
     openRestaurants.sort((a, b) {
@@ -51,7 +51,11 @@ class FastestRestaurantsScreen extends StatelessWidget {
     final fastestRestaurantIds = openRestaurants.map((r) => r.id).toSet();
 
     final fastItems = restProv.featuredItems
-        .where((item) => fastestRestaurantIds.contains(item.restaurantId))
+        .where(
+          (item) =>
+              fastestRestaurantIds.contains(item.restaurantId) &&
+              item.prepTime != null,
+        )
         .toList();
 
     fastItems.sort((a, b) {

@@ -9,6 +9,7 @@ import '../../services/firestore_service.dart';
 import '../../utils/helpers.dart';
 import '../../utils/theme.dart';
 import 'restaurant_detail_screen.dart';
+import 'store_detail_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -74,7 +75,11 @@ class _SearchScreenState extends State<SearchScreen> {
       //    word-order-independent matching (e.g. "zinger" matches "Crunchy Zinger")
       final allDishes = await _firestoreService.getAllMenuItems();
       final dishes = allDishes
-          .where((d) => _matchesAllWords(d.name, queryWords))
+          .where(
+            (d) =>
+                _matchesAllWords(d.name, queryWords) ||
+                _matchesAllWords(d.category, queryWords),
+          )
           .toList();
 
       if (mounted) {
@@ -158,10 +163,9 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                   const SizedBox(width: 8),
                   _FilterChip(
-                    label: 'Restaurants',
-                    isSelected: _selectedFilter == 'Restaurants',
-                    onTap: () =>
-                        setState(() => _selectedFilter = 'Restaurants'),
+                    label: 'Stores',
+                    isSelected: _selectedFilter == 'Stores',
+                    onTap: () => setState(() => _selectedFilter = 'Stores'),
                   ),
                   const SizedBox(width: 8),
                   _FilterChip(
@@ -203,7 +207,7 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     final showRestaurants =
-        _selectedFilter == 'All' || _selectedFilter == 'Restaurants';
+        _selectedFilter == 'All' || _selectedFilter == 'Stores';
     final showDishes = _selectedFilter == 'All' || _selectedFilter == 'Dishes';
 
     if (_restaurantResults.isEmpty && _dishResults.isEmpty) {
@@ -229,7 +233,7 @@ class _SearchScreenState extends State<SearchScreen> {
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Text(
-              'Restaurants',
+              'Stores',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
@@ -308,7 +312,11 @@ class _RestaurantSearchResult extends StatelessWidget {
         context.read<RestaurantProvider>().selectRestaurant(restaurant);
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const RestaurantDetailScreen()),
+          MaterialPageRoute(
+            builder: (_) => restaurant.businessType == 'restaurant'
+                ? const RestaurantDetailScreen()
+                : const StoreDetailScreen(),
+          ),
         );
       },
       child: Container(
@@ -424,7 +432,11 @@ class _DishSearchResult extends StatelessWidget {
           context.read<RestaurantProvider>().selectRestaurant(restaurant);
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const RestaurantDetailScreen()),
+            MaterialPageRoute(
+              builder: (_) => restaurant.businessType == 'restaurant'
+                  ? const RestaurantDetailScreen()
+                  : const StoreDetailScreen(),
+            ),
           );
         }
       },

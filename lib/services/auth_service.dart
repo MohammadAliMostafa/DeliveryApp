@@ -1,7 +1,11 @@
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:google_sign_in_all_platforms/google_sign_in_all_platforms.dart'
+    as gsin;
 import '../models/user_model.dart';
+import '../models/application_model.dart';
 import '../utils/constants.dart';
 
 class AuthService {
@@ -12,24 +16,34 @@ class AuthService {
         '201127488522-2oti854391nja6j6qa6mogb77chghdms.apps.googleusercontent.com',
   );
 
+  final gsin.GoogleSignIn _googleSignInWindows = gsin.GoogleSignIn(
+    params: gsin.GoogleSignInParams(
+      clientId:
+          '201127488522-4h6tkp6h0vfupjkvap5d1sdcdbeim9qr.apps.googleusercontent.com',
+    ),
+  );
+
   /// Current Firebase user
   User? get currentUser => _auth.currentUser;
 
   /// Auth state stream
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  /// Register with email and password
   Future<UserModel> register({
     required String email,
     required String password,
     required String name,
     required String role,
     String phone = '',
+    Map<String, dynamic>? formData,
   }) async {
     final credential = await _auth.createUserWithEmailAndPassword(
       email: email,
       password: password,
     );
+
+    final bool isApproved =
+        role == UserRoles.customer || role == UserRoles.admin;
 
     final user = UserModel(
       uid: credential.user!.uid,
@@ -37,6 +51,7 @@ class AuthService {
       email: email,
       role: role,
       phone: phone,
+      isApproved: isApproved,
       driverStatus: role == UserRoles.driver ? DriverStatus.idle : null,
     );
 
@@ -44,6 +59,21 @@ class AuthService {
         .collection(FirestoreCollections.users)
         .doc(user.uid)
         .set(user.toMap());
+
+    if (!isApproved) {
+      final appRef = _firestore.collection('applications').doc();
+      final application = ApplicationModel(
+        id: appRef.id,
+        userId: user.uid,
+        userName: user.name,
+        userEmail: user.email,
+        userPhone: user.phone,
+        requestedRole: role,
+        status: 'pending',
+        formData: formData ?? {},
+      );
+      await appRef.set(application.toMap());
+    }
 
     return user;
   }
@@ -63,20 +93,34 @@ class AuthService {
 
   /// Sign in with Google
   Future<UserModel> signInWithGoogle() async {
-    // Trigger the authentication flow
-    final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-    if (googleUser == null) {
-      throw Exception('Google Sign-In cancelled');
-    }
+    String? accessToken;
+    String? idToken;
 
-    // Obtain the auth details from the request
-    final GoogleSignInAuthentication googleAuth =
-        await googleUser.authentication;
+    if (Platform.isWindows) {
+      final credentials = await _googleSignInWindows.signIn();
+      if (credentials == null) {
+        throw Exception('Google Sign-In cancelled');
+      }
+      accessToken = credentials.accessToken;
+      idToken = credentials.idToken;
+    } else {
+      // Trigger the authentication flow
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        throw Exception('Google Sign-In cancelled');
+      }
+
+      // Obtain the auth details from the request
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      accessToken = googleAuth.accessToken;
+      idToken = googleAuth.idToken;
+    }
 
     // Create a new credential
     final AuthCredential credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
+      accessToken: accessToken,
+      idToken: idToken,
     );
 
     // Sign in to Firebase with the Google User Credential
@@ -156,7 +200,16 @@ class AuthService {
 
   /// Sign out
   Future<void> signOut() async {
-    await Future.wait([_auth.signOut(), _googleSignIn.signOut()]);
+    final futures = <Future<dynamic>>[
+      _auth.signOut(),
+      _googleSignIn.signOut(),
+    ];
+
+    if (Platform.isWindows) {
+      futures.add(_googleSignInWindows.signOut());
+    }
+
+    await Future.wait(futures);
   }
 
   /// Password reset

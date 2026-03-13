@@ -5,8 +5,10 @@ import '../../utils/constants.dart';
 import '../customer/customer_shell.dart';
 import '../driver/driver_shell.dart';
 import '../restaurant/restaurant_shell.dart';
+import '../admin/admin_shell.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
+import 'pending_approval_screen.dart';
 
 /// Decides which interface to show based on user role
 class RoleWrapper extends StatelessWidget {
@@ -28,6 +30,11 @@ class RoleWrapper extends StatelessWidget {
           return const AuthFlow();
         }
 
+        // Check if user is pending approval
+        if (auth.user?.isApproved == false) {
+          return const PendingApprovalScreen();
+        }
+
         // Route by role
         switch (auth.userRole) {
           case UserRoles.customer:
@@ -36,6 +43,8 @@ class RoleWrapper extends StatelessWidget {
             return const DriverShell();
           case UserRoles.restaurant:
             return const RestaurantShell();
+          case UserRoles.admin:
+            return const AdminShell();
           default:
             return const CustomerShell();
         }

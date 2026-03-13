@@ -18,6 +18,7 @@ class RestaurantModel {
   final String openTime;
   final String closeTime;
   final int estimatedDeliveryMin;
+  final String businessType; // 'restaurant', 'supermarket', etc.
   final DateTime createdAt;
 
   RestaurantModel({
@@ -38,6 +39,7 @@ class RestaurantModel {
     this.openTime = '08:00',
     this.closeTime = '22:00',
     this.estimatedDeliveryMin = 30,
+    this.businessType = 'restaurant',
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -60,6 +62,7 @@ class RestaurantModel {
       'openTime': openTime,
       'closeTime': closeTime,
       'estimatedDeliveryMin': estimatedDeliveryMin,
+      'businessType': businessType,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -83,6 +86,7 @@ class RestaurantModel {
       openTime: map['openTime'] ?? '08:00',
       closeTime: map['closeTime'] ?? '22:00',
       estimatedDeliveryMin: map['estimatedDeliveryMin'] ?? 30,
+      businessType: map['businessType'] ?? 'restaurant',
       createdAt: map['createdAt'] != null
           ? (map['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
@@ -105,6 +109,7 @@ class RestaurantModel {
     String? openTime,
     String? closeTime,
     int? estimatedDeliveryMin,
+    String? businessType,
   }) {
     return RestaurantModel(
       id: id,
@@ -124,6 +129,7 @@ class RestaurantModel {
       openTime: openTime ?? this.openTime,
       closeTime: closeTime ?? this.closeTime,
       estimatedDeliveryMin: estimatedDeliveryMin ?? this.estimatedDeliveryMin,
+      businessType: businessType ?? this.businessType,
       createdAt: createdAt,
     );
   }

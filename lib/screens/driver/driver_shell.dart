@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/order_model.dart';
+import '../../models/user_model.dart';
 import '../../services/firestore_service.dart';
 import '../../services/location_service.dart';
 import '../../utils/constants.dart';
@@ -33,26 +34,95 @@ class _DriverShellState extends State<DriverShell> {
 
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: screens),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (i) => setState(() => _selectedIndex = i),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.delivery_dining_outlined),
-            selectedIcon: Icon(Icons.delivery_dining),
-            label: 'Deliveries',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFFAFAFA),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(
+                  0,
+                  Icons.delivery_dining_outlined,
+                  Icons.delivery_dining,
+                  'Deliveries',
+                ),
+                _buildNavItem(
+                  1,
+                  Icons.bar_chart_outlined,
+                  Icons.bar_chart,
+                  'Earnings',
+                ),
+                _buildNavItem(2, Icons.person_outline, Icons.person, 'Profile'),
+              ],
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(Icons.bar_chart),
-            label: 'Earnings',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(
+    int index,
+    IconData icon,
+    IconData activeIcon,
+    String label,
+  ) {
+    final isSelected = _selectedIndex == index;
+
+    Widget iconWidget = Icon(
+      isSelected ? activeIcon : icon,
+      color: isSelected ? AppColors.primary : Colors.grey.shade400,
+      size: 26,
+    );
+
+    return GestureDetector(
+      onTap: () => setState(() => _selectedIndex = index),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.symmetric(
+          horizontal: isSelected ? 16 : 12,
+          vertical: 8,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedScale(
+              scale: isSelected ? 1.1 : 1.0,
+              duration: const Duration(milliseconds: 200),
+              child: iconWidget,
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -76,7 +146,7 @@ class _DriverHomeTabState extends State<_DriverHomeTab>
   Timer? _offlineTimer;
 
   List<OrderModel> _availableOrders = [];
-  List<Map<String, dynamic>> _onlineDrivers = [];
+  List<UserModel> _onlineDrivers = [];
   bool _isOnline = false;
   bool _toggling = false;
   bool _accepting = false;
@@ -241,11 +311,11 @@ class _DriverHomeTabState extends State<_DriverHomeTab>
       // Build list of (driverId, distance) for all online drivers
       final driverDistances = <_DriverDist>[];
       for (final d in _onlineDrivers) {
-        final dLat = (d['latitude'] as num?)?.toDouble();
-        final dLng = (d['longitude'] as num?)?.toDouble();
+        final dLat = d.latitude;
+        final dLng = d.longitude;
         if (dLat == null || dLng == null) continue;
         final dist = Geolocator.distanceBetween(dLat, dLng, orderLat, orderLng);
-        driverDistances.add(_DriverDist(d['uid'] as String? ?? '', dist));
+        driverDistances.add(_DriverDist(d.uid, dist));
       }
 
       // Add self if not in the online drivers list
@@ -449,7 +519,7 @@ class _DriverHomeTabState extends State<_DriverHomeTab>
     final auth = context.read<AuthProvider>();
     if (auth.user == null) return;
     try {
-      await _fs.updateOrderStatus(order.id, 'delivering');
+      await _fs.updateOrderStatus(order.id, OrderStatus.pickedUp);
       await _fs.updateDriverStatus(auth.user!.uid, DriverStatus.delivering);
       final updated = auth.user!.copyWith(
         driverStatus: DriverStatus.delivering,
@@ -1707,8 +1777,32 @@ class _EarningsCard extends StatelessWidget {
 }
 
 // ─── Driver Profile Tab ─────────────────────────────────────
-class _DriverProfileTab extends StatelessWidget {
+class _DriverProfileTab extends StatefulWidget {
   const _DriverProfileTab();
+
+  @override
+  State<_DriverProfileTab> createState() => _DriverProfileTabState();
+}
+
+class _DriverProfileTabState extends State<_DriverProfileTab>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1716,124 +1810,241 @@ class _DriverProfileTab extends StatelessWidget {
     final user = auth.user;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Profile')),
+      backgroundColor: const Color(0xFFF8F9FA),
+      appBar: AppBar(
+        title: const Text(
+          'Profile',
+          style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.5),
+        ),
+        backgroundColor: const Color(0xFFF8F9FA),
+        elevation: 0,
+        centerTitle: false,
+      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: Column(
           children: [
-            // Avatar
-            CircleAvatar(
-              radius: 48,
-              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-              child: Text(
-                Helpers.getInitials(user?.name ?? '?'),
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
+            // ── Profile Header Card ──
+            _buildAnimatedItem(
+              index: 0,
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              user?.name ?? '',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-              decoration: BoxDecoration(
-                color: AppColors.accent.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text(
-                'Driver',
-                style: TextStyle(
-                  color: AppColors.accent,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
+                child: Row(
+                  children: [
+                    Hero(
+                      tag: 'driver_profile_avatar',
+                      child: CircleAvatar(
+                        radius: 36,
+                        backgroundColor:
+                            AppColors.primary.withValues(alpha: 0.1),
+                        child: Text(
+                          Helpers.getInitials(user?.name ?? '?'),
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  user?.name ?? 'Driver User',
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.textPrimary,
+                                    letterSpacing: -0.5,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.accent.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: const Text(
+                                  'Driver',
+                                  style: TextStyle(
+                                    color: AppColors.accent,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            user?.email ?? 'No email associated',
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 14,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => _editProfile(
+                        context,
+                        'Name',
+                        user?.name ?? '',
+                        (val) {
+                          if (user != null) {
+                            auth.updateProfile(user.copyWith(name: val));
+                          }
+                        },
+                      ),
+                      icon: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.edit_rounded,
+                          color: AppColors.primary,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              user?.email ?? '',
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 13,
               ),
             ),
             const SizedBox(height: 32),
 
-            // Edit Name
-            _profileTile(
-              icon: Icons.person_outline,
-              title: 'Name',
-              subtitle: user?.name ?? 'Set your name',
-              onTap: () =>
-                  _editProfile(context, 'Name', user?.name ?? '', (val) {
-                    if (user != null) {
-                      auth.updateProfile(user.copyWith(name: val));
-                    }
-                  }),
-            ),
-
-            // Edit Phone
-            _profileTile(
-              icon: Icons.phone_outlined,
-              title: 'Phone Number',
-              subtitle: user?.phone ?? 'Add phone number',
-              onTap: () => _editProfile(
-                context,
-                'Phone Number',
-                user?.phone ?? '',
-                (val) {
-                  if (user != null) {
-                    auth.updateProfile(user.copyWith(phone: val));
-                  }
-                },
+            // ── Account Settings Group ──
+            _buildAnimatedItem(
+              index: 1,
+              child: _SettingsGroup(
+                title: 'Account Settings',
+                children: [
+                  _SettingsTile(
+                    icon: Icons.phone_rounded,
+                    title: 'Phone Number',
+                    subtitle: user?.phone ?? 'Add your phone number',
+                    onTap: () => _editProfile(
+                      context,
+                      'Phone Number',
+                      user?.phone ?? '',
+                      (val) {
+                        if (user != null) {
+                          auth.updateProfile(user.copyWith(phone: val));
+                        }
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 28),
 
-            // Help & Support
-            _profileTile(
-              icon: Icons.help_outline,
-              title: 'Help & Support',
-              subtitle: 'Get help from our team',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const HelpSupportScreen(userType: 'Driver'),
+            // ── Support Group ──
+            _buildAnimatedItem(
+              index: 2,
+              child: _SettingsGroup(
+                title: 'Help & Support',
+                children: [
+                  _SettingsTile(
+                    icon: Icons.help_rounded,
+                    title: 'Support Center',
+                    subtitle: 'Get help with your orders',
+                    iconColor: Colors.blue,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const HelpSupportScreen(userType: 'Driver'),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
+                ],
+              ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 48),
 
-            // Sign out
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => auth.signOut(),
-                icon: const Icon(Icons.logout, color: AppColors.error),
-                label: const Text(
-                  'Sign Out',
-                  style: TextStyle(color: AppColors.error),
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.error),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+            // ── Logout Button ──
+            _buildAnimatedItem(
+              index: 3,
+              child: SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: TextButton.icon(
+                  onPressed: () => auth.signOut(),
+                  icon: const Icon(
+                    Icons.logout_rounded,
+                    color: AppColors.error,
+                  ),
+                  label: const Text(
+                    'Sign Out',
+                    style: TextStyle(
+                      color: AppColors.error,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    backgroundColor: AppColors.error.withValues(alpha: 0.1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                 ),
               ),
             ),
+            const SizedBox(height: 40),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildAnimatedItem({required int index, required Widget child}) {
+    final delay = index * 0.12;
+    final animation = CurvedAnimation(
+      parent: _animController,
+      curve: Interval(delay.clamp(0.0, 1.0), 1.0, curve: Curves.easeOutCubic),
+    );
+
+    return FadeTransition(
+      opacity: animation,
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.4),
+          end: Offset.zero,
+        ).animate(animation),
+        child: child,
       ),
     );
   }
@@ -1848,21 +2059,33 @@ class _DriverProfileTab extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Edit $field'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Edit $field',
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
         content: TextField(
           controller: controller,
           decoration: InputDecoration(
             labelText: field,
             hintText: 'Enter new $field',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            filled: true,
+            fillColor: Colors.grey.withValues(alpha: 0.05),
           ),
           autofocus: true,
           keyboardType: field == 'Phone Number'
               ? TextInputType.phone
               : TextInputType.text,
         ),
+        actionsPadding: const EdgeInsets.only(right: 16, bottom: 16),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
+            style: TextButton.styleFrom(foregroundColor: AppColors.textHint),
             child: const Text('Cancel'),
           ),
           FilledButton(
@@ -1872,40 +2095,137 @@ class _DriverProfileTab extends StatelessWidget {
                 Navigator.pop(ctx);
               }
             },
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
             child: const Text('Save'),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _profileTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-      leading: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: AppColors.primary.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(10),
+class _SettingsGroup extends StatelessWidget {
+  final String title;
+  final List<Widget> children;
+
+  const _SettingsGroup({required this.title, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 12),
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+              letterSpacing: -0.3,
+            ),
+          ),
         ),
-        child: Icon(icon, color: AppColors.primary, size: 22),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            children: children,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SettingsTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final Color? iconColor;
+
+  const _SettingsTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.iconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveIconColor = iconColor ?? AppColors.primary;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: effectiveIconColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: effectiveIconColor, size: 22),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: AppColors.textHint,
+                        fontSize: 13,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textHint.withValues(alpha: 0.5),
+                size: 24,
+              ),
+            ],
+          ),
+        ),
       ),
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: const TextStyle(color: AppColors.textHint, fontSize: 12),
-      ),
-      trailing: const Icon(Icons.chevron_right, color: AppColors.textHint),
-      onTap: onTap,
     );
   }
 }

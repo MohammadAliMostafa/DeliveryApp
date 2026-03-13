@@ -109,6 +109,10 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
           context,
         ).showSnackBar(SnackBar(content: Text('Location error: $e')));
       }
+    } finally {
+      if (mounted && _locating) {
+        setState(() => _locating = false);
+      }
     }
   }
 

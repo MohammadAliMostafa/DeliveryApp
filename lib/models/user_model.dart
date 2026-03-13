@@ -14,6 +14,10 @@ class UserModel {
   final String? currentOrderId; // For drivers — active delivery
   final List<String> favoriteRestaurantIds;
   final List<String> favoriteMenuItemIds;
+  final List<String> favoriteOfferIds;
+  final bool isDisabled;
+  final bool isApproved;
+  final String? fcmToken;
   final DateTime createdAt;
 
   UserModel({
@@ -30,6 +34,10 @@ class UserModel {
     this.currentOrderId,
     this.favoriteRestaurantIds = const [],
     this.favoriteMenuItemIds = const [],
+    this.favoriteOfferIds = const [],
+    this.isDisabled = false,
+    this.isApproved = true,
+    this.fcmToken,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -48,6 +56,10 @@ class UserModel {
       'currentOrderId': currentOrderId,
       'favoriteRestaurantIds': favoriteRestaurantIds,
       'favoriteMenuItemIds': favoriteMenuItemIds,
+      'favoriteOfferIds': favoriteOfferIds,
+      'isDisabled': isDisabled,
+      'isApproved': isApproved,
+      'fcmToken': fcmToken,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -69,6 +81,10 @@ class UserModel {
         map['favoriteRestaurantIds'] ?? [],
       ),
       favoriteMenuItemIds: List<String>.from(map['favoriteMenuItemIds'] ?? []),
+      favoriteOfferIds: List<String>.from(map['favoriteOfferIds'] ?? []),
+      isDisabled: map['isDisabled'] ?? false,
+      isApproved: map['isApproved'] ?? true,
+      fcmToken: map['fcmToken'],
       createdAt: map['createdAt'] != null
           ? (map['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
@@ -86,6 +102,11 @@ class UserModel {
     String? currentOrderId,
     List<String>? favoriteRestaurantIds,
     List<String>? favoriteMenuItemIds,
+    List<String>? favoriteOfferIds,
+    bool? isDisabled,
+    bool? isApproved,
+    String? fcmToken,
+    DateTime? createdAt,
   }) {
     return UserModel(
       uid: uid,
@@ -102,7 +123,11 @@ class UserModel {
       favoriteRestaurantIds:
           favoriteRestaurantIds ?? this.favoriteRestaurantIds,
       favoriteMenuItemIds: favoriteMenuItemIds ?? this.favoriteMenuItemIds,
-      createdAt: createdAt,
+      favoriteOfferIds: favoriteOfferIds ?? this.favoriteOfferIds,
+      isDisabled: isDisabled ?? this.isDisabled,
+      isApproved: isApproved ?? this.isApproved,
+      fcmToken: fcmToken ?? this.fcmToken,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }

@@ -17,8 +17,7 @@ class CartProvider extends ChangeNotifier {
 
   double get subtotal => _items.fold(0, (sum, item) => sum + item.totalPrice);
   double get deliveryFee => _items.isEmpty ? 0 : AppDefaults.deliveryFee;
-  double get serviceFee => _items.isEmpty ? 0 : AppDefaults.serviceFee;
-  double get total => subtotal + deliveryFee + serviceFee;
+  double get total => subtotal + deliveryFee;
 
   /// Add item to cart. Clears cart if different restaurant.
   void addItem(

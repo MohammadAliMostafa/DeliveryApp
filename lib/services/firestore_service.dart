@@ -3,10 +3,46 @@ import '../models/restaurant_model.dart';
 import '../models/menu_item_model.dart';
 import '../models/order_model.dart';
 import '../models/offer_model.dart';
+import '../models/user_model.dart';
+import '../models/business_type_model.dart';
+import '../models/article_model.dart';
 import '../utils/constants.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+
+// ───────────────────────── ARTICLES ─────────────────────────
+
+  /// Get all articles (Admin Announcements)
+  Stream<List<ArticleModel>> getArticles() {
+    return _db
+        .collection('articles')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map(
+          (snap) =>
+              snap.docs.map((d) => ArticleModel.fromMap(d.data())).toList(),
+        );
+  }
+
+  /// Save or update an article
+  Future<void> saveArticle(ArticleModel article) async {
+    final docRef = _db.collection('articles').doc(article.id.isEmpty ? null : article.id);
+    final data = article.toMap();
+    if (article.id.isEmpty) {
+      final newDoc = _db.collection('articles').doc();
+      data['id'] = newDoc.id;
+      data['createdAt'] = FieldValue.serverTimestamp();
+      await newDoc.set(data);
+    } else {
+      await docRef.update(data);
+    }
+  }
+
+  /// Delete an article
+  Future<void> deleteArticle(String id) async {
+    await _db.collection('articles').doc(id).delete();
+  }
 
   // ───────────────────────── RESTAURANTS ─────────────────────────
 
@@ -241,7 +277,6 @@ class FirestoreService {
         'driverId': driverId,
         'driverName': driverName,
         'driverPhone': driverPhone,
-        'status': OrderStatus.pickedUp,
         'updatedAt': Timestamp.now(),
       });
       return true;
@@ -318,7 +353,7 @@ class FirestoreService {
     return _db
         .collection(FirestoreCollections.orders)
         .where('driverId', isEqualTo: driverId)
-        .where('status', whereIn: [OrderStatus.pickedUp])
+        .where('status', whereIn: [OrderStatus.ready, OrderStatus.pickedUp])
         .snapshots()
         .map(
           (snap) => snap.docs.map((d) => OrderModel.fromMap(d.data())).toList(),
@@ -372,13 +407,15 @@ class FirestoreService {
   }
 
   /// Stream all online idle drivers (for top-5 routing)
-  Stream<List<Map<String, dynamic>>> getOnlineIdleDrivers() {
+  Stream<List<UserModel>> getOnlineIdleDrivers() {
     return _db
         .collection(FirestoreCollections.users)
         .where('role', isEqualTo: 'driver')
         .where('driverStatus', isEqualTo: DriverStatus.online)
         .snapshots()
-        .map((snap) => snap.docs.map((d) => d.data()).toList());
+        .map(
+          (snap) => snap.docs.map((d) => UserModel.fromMap(d.data())).toList(),
+        );
   }
 
   // ───────────────────────── OFFERS ─────────────────────────
@@ -424,5 +461,112 @@ class FirestoreService {
           docs.sort((a, b) => b.createdAt.compareTo(a.createdAt));
           return docs;
         });
+  }
+
+  // ───────────────────────── BUSINESS TYPES ─────────────────────────
+
+  /// Stream all active business types (sorted by sortOrder)
+  Stream<List<BusinessTypeModel>> getBusinessTypes() {
+    return _db
+        .collection(FirestoreCollections.businessTypes)
+        .where('isActive', isEqualTo: true)
+        .snapshots()
+        .map((snap) {
+          final types = snap.docs
+              .map((d) => BusinessTypeModel.fromMap(d.data()))
+              .toList();
+          types.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+          return types;
+        });
+  }
+
+  /// Save a business type (create or update) — admin only
+  Future<void> saveBusinessType(BusinessTypeModel type) async {
+    await _db
+        .collection(FirestoreCollections.businessTypes)
+        .doc(type.id)
+        .set(type.toMap());
+  }
+
+  /// Delete a business type — admin only
+  Future<void> deleteBusinessType(String id) async {
+    await _db.collection(FirestoreCollections.businessTypes).doc(id).delete();
+  }
+
+  /// Seed default business types if collection is empty
+  Future<void> seedDefaultBusinessTypes() async {
+    final snap = await _db
+        .collection(FirestoreCollections.businessTypes)
+        .limit(1)
+        .get();
+    if (snap.docs.isNotEmpty) return; // Already seeded
+
+    final defaults = [
+      BusinessTypeModel(
+        id: 'restaurant',
+        displayName: 'Restaurants',
+        icon: 'restaurant',
+        sortOrder: 0,
+      ),
+      BusinessTypeModel(
+        id: 'supermarket',
+        displayName: 'Supermarkets',
+        icon: 'shopping_cart',
+        sortOrder: 1,
+      ),
+    ];
+
+    for (final type in defaults) {
+      await saveBusinessType(type);
+    }
+  }
+
+  // ───────────────────────── ADMIN EXCLUSIVE ─────────────────────────
+
+  /// Stream ALL users for admin panel
+  Stream<List<UserModel>> getAllUsers() {
+    return _db.collection(FirestoreCollections.users).snapshots().map((snap) {
+      final users = snap.docs.map((d) => UserModel.fromMap(d.data())).toList();
+      users.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return users;
+    });
+  }
+
+  /// Change user role (admin only)
+  Future<void> updateUserRole(String uid, String newRole) async {
+    await _db.collection(FirestoreCollections.users).doc(uid).update({
+      'role': newRole,
+    });
+  }
+
+  /// Ban or unban user (admin only)
+  Future<void> updateUserDisabledStatus(String uid, bool isDisabled) async {
+    await _db.collection(FirestoreCollections.users).doc(uid).update({
+      'isDisabled': isDisabled,
+    });
+  }
+
+  /// Delete user (admin only) - note this doesn't delete auth, just firestore doc
+  Future<void> deleteUser(String uid) async {
+    await _db.collection(FirestoreCollections.users).doc(uid).delete();
+  }
+
+  /// Delete restaurant completely (admin only)
+  Future<void> deleteRestaurant(String restaurantId) async {
+    await _db
+        .collection(FirestoreCollections.restaurants)
+        .doc(restaurantId)
+        .delete();
+  }
+
+  /// Stream ALL orders across all restaurants for Admin
+  Stream<List<OrderModel>> getAllOrders() {
+    return _db.collection(FirestoreCollections.orders).snapshots().map((snap) {
+      final orders = snap.docs
+          .map((d) => OrderModel.fromMap(d.data()))
+          .toList();
+      orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return orders;
+    });
   }
 }

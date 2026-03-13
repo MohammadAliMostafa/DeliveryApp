@@ -37,7 +37,10 @@ class _RestaurantShellState extends State<RestaurantShell> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final auth = context.read<AuthProvider>();
-      context.read<RestaurantProvider>().loadOwnedRestaurant(auth.user!.uid);
+      final restProv = context.read<RestaurantProvider>();
+      restProv.loadOwnedRestaurant(auth.user!.uid);
+      restProv.seedBusinessTypes();
+      restProv.listenToBusinessTypes();
     });
   }
 
@@ -170,13 +173,13 @@ class _RestaurantSetupScreenState extends State<_RestaurantSetupScreen> {
               const Icon(Icons.store, size: 64, color: AppColors.primary),
               const SizedBox(height: 16),
               const Text(
-                'Set Up Your Restaurant',
+                'Set Up Your Shop',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               const Text(
-                'Fill in your restaurant details to get started',
+                'Fill in your shop details to get started',
                 style: TextStyle(color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
@@ -184,7 +187,7 @@ class _RestaurantSetupScreenState extends State<_RestaurantSetupScreen> {
               TextField(
                 controller: _nameController,
                 decoration: const InputDecoration(
-                  labelText: 'Restaurant Name',
+                  labelText: 'Shop Name',
                   prefixIcon: Icon(Icons.store_outlined),
                 ),
               ),
@@ -212,7 +215,7 @@ class _RestaurantSetupScreenState extends State<_RestaurantSetupScreen> {
                   onPressed: _isLoading ? null : _createRestaurant,
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Create Restaurant'),
+                      : const Text('Create Shop'),
                 ),
               ),
             ],
@@ -261,12 +264,16 @@ class _DashboardTab extends StatelessWidget {
     final todayOrders = orders
         .where(
           (o) =>
+              o.status != OrderStatus.cancelled &&
               o.createdAt.day == DateTime.now().day &&
               o.createdAt.month == DateTime.now().month &&
               o.createdAt.year == DateTime.now().year,
         )
         .toList();
-    final todayRevenue = todayOrders.fold<double>(0, (sum, o) => sum + o.total);
+    // Calculate today's revenue (only delivered orders, using subtotal since delivery fee goes to driver)
+    final todayRevenue = todayOrders
+        .where((o) => o.status == OrderStatus.delivered)
+        .fold<double>(0, (sum, o) => sum + o.subtotal);
 
     return Scaffold(
       appBar: AppBar(
@@ -969,13 +976,60 @@ class _MenuTabState extends State<_MenuTab> with AutomaticKeepAliveClientMixin {
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  Text(
-                                    '${item.category} • ${Helpers.formatPrice(item.price)}',
-                                    style: const TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 13,
+                                  if (item.hasDiscount)
+                                    Row(
+                                      children: [
+                                        Text(
+                                          Helpers.formatPrice(item.price),
+                                          style: const TextStyle(
+                                            decoration:
+                                                TextDecoration.lineThrough,
+                                            color: AppColors.textHint,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${item.category} • ${Helpers.formatPrice(item.discountedPrice)}',
+                                          style: const TextStyle(
+                                            color: AppColors.primary,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 5,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.error.withValues(
+                                              alpha: 0.1,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            '-${(item.discount * 100).round()}%',
+                                            style: const TextStyle(
+                                              color: AppColors.error,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  else
+                                    Text(
+                                      '${item.category} • ${Helpers.formatPrice(item.price)}',
+                                      style: const TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 13,
+                                      ),
                                     ),
-                                  ),
                                 ],
                               ),
                             ),
@@ -1035,6 +1089,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
   late final TextEditingController _priceCtl;
   late final TextEditingController _catCtl;
   late final TextEditingController _prepTimeCtl;
+  late final TextEditingController _discountCtl;
   XFile? _pickedImage;
   bool _isSaving = false;
   bool get _isEditing => widget.existingItem != null;
@@ -1051,6 +1106,11 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     _catCtl = TextEditingController(text: e?.category ?? 'Main');
     _prepTimeCtl = TextEditingController(
       text: e != null && e.prepTime != null ? e.prepTime.toString() : '',
+    );
+    _discountCtl = TextEditingController(
+      text: e != null && e.discount > 0
+          ? (e.discount * 100).round().toString()
+          : '',
     );
   }
 
@@ -1084,17 +1144,17 @@ class _AddItemDialogState extends State<_AddItemDialog> {
         );
       }
 
+      final discountPct = double.tryParse(_discountCtl.text) ?? 0;
       final item = MenuItemModel(
         id: itemId,
         restaurantId: widget.restaurantId,
         name: _nameCtl.text.trim(),
         description: _descCtl.text.trim(),
         price: double.tryParse(_priceCtl.text) ?? 0,
-        prepTime: int.tryParse(
-          _prepTimeCtl.text,
-        ), // Now optional, defaults to null if empty
+        prepTime: int.tryParse(_prepTimeCtl.text),
         category: _catCtl.text.trim(),
         imageUrl: imageUrl,
+        discount: (discountPct.clamp(0, 99)) / 100,
       );
 
       if (!mounted) return;
@@ -1203,6 +1263,16 @@ class _AddItemDialogState extends State<_AddItemDialog> {
               TextField(
                 controller: _catCtl,
                 decoration: const InputDecoration(labelText: 'Category'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _discountCtl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Discount % (optional)',
+                  hintText: 'e.g., 20 for 20% off',
+                  suffixText: '%',
+                ),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -1446,14 +1516,63 @@ class _OffersTabState extends State<_OffersTab>
                                     ),
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(
-                                    '${offer.itemIds.length} items • ${Helpers.formatPrice(offer.bundlePrice)}',
-                                    style: const TextStyle(
-                                      color: AppColors.primary,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
+                                  if (offer.hasDiscount)
+                                    Row(
+                                      children: [
+                                        Text(
+                                          Helpers.formatPrice(
+                                            offer.originalPrice,
+                                          ),
+                                          style: const TextStyle(
+                                            decoration:
+                                                TextDecoration.lineThrough,
+                                            color: AppColors.textHint,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${offer.itemIds.length} items • ${Helpers.formatPrice(offer.bundlePrice)}',
+                                          style: const TextStyle(
+                                            color: AppColors.primary,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 5,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.error.withValues(
+                                              alpha: 0.1,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            '-${offer.discountPercentage}%',
+                                            style: const TextStyle(
+                                              color: AppColors.error,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  else
+                                    Text(
+                                      '${offer.itemIds.length} items • ${Helpers.formatPrice(offer.bundlePrice)}',
+                                      style: const TextStyle(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
                                     ),
-                                  ),
                                 ],
                               ),
                             ),
@@ -1518,6 +1637,7 @@ class _AddBundleDialogState extends State<_AddBundleDialog> {
   late final TextEditingController _titleController;
   late final TextEditingController _descController;
   late final TextEditingController _priceController;
+  late final TextEditingController _originalPriceController;
   late final List<String> _selectedItemIds;
   int _selectedColor = 0xFFE91E63; // Default Pink
   XFile? _pickedImage;
@@ -1535,6 +1655,9 @@ class _AddBundleDialogState extends State<_AddBundleDialog> {
     _descController = TextEditingController(text: e?.description ?? '');
     _priceController = TextEditingController(
       text: e != null ? e.bundlePrice.toString() : '',
+    );
+    _originalPriceController = TextEditingController(
+      text: e != null && e.originalPrice > 0 ? e.originalPrice.toString() : '',
     );
     _selectedItemIds = List<String>.from(e?.itemIds ?? []);
     if (e?.color != null) {
@@ -1634,9 +1757,43 @@ class _AddBundleDialogState extends State<_AddBundleDialog> {
                 controller: _priceController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                  labelText: 'Bundle Price',
+                  labelText: 'Bundle Price (Sale Price)',
                   prefixText: '\$ ',
                 ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _originalPriceController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Original Price (Optional)',
+                        hintText: 'Sum of regular item prices',
+                        prefixText: '\$ ',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton.icon(
+                    onPressed: () {
+                      final menuItems = context
+                          .read<RestaurantProvider>()
+                          .menuItems;
+                      double sum = 0;
+                      for (final id in _selectedItemIds) {
+                        final item = menuItems
+                            .where((m) => m.id == id)
+                            .firstOrNull;
+                        if (item != null) sum += item.price;
+                      }
+                      _originalPriceController.text = sum.toStringAsFixed(2);
+                    },
+                    icon: const Icon(Icons.calculate, size: 16),
+                    label: const Text('Auto-calc'),
+                  ),
+                ],
               ),
               const SizedBox(height: 20),
               // Color Picker
@@ -1969,6 +2126,7 @@ class _AddBundleDialogState extends State<_AddBundleDialog> {
         title: _titleController.text.trim(),
         description: _descController.text.trim(),
         bundlePrice: double.tryParse(_priceController.text) ?? 0.0,
+        originalPrice: double.tryParse(_originalPriceController.text) ?? 0.0,
         itemIds: _selectedItemIds,
         itemNames: itemNames,
         imageUrl: imageUrl,
@@ -2022,6 +2180,7 @@ class _SettingsTabState extends State<_SettingsTab>
   late bool _isOpen;
   double? _pickedLat;
   double? _pickedLng;
+  late String _selectedBusinessType;
 
   @override
   bool get wantKeepAlive => true;
@@ -2040,6 +2199,7 @@ class _SettingsTabState extends State<_SettingsTab>
       text: r.estimatedDeliveryMin.toString(),
     );
     _isOpen = r.isOpen;
+    _selectedBusinessType = r.businessType;
   }
 
   Future<void> _pickAndUploadImage({
@@ -2315,7 +2475,7 @@ class _SettingsTabState extends State<_SettingsTab>
 
           // ── Restaurant Info (Editable) ─────────────────
           const Text(
-            'Restaurant Info',
+            'Store Info',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 16),
@@ -2336,6 +2496,36 @@ class _SettingsTabState extends State<_SettingsTab>
             maxLines: 2,
           ),
           const SizedBox(height: 14),
+          // ── Business Type Dropdown ──
+          Consumer<RestaurantProvider>(
+            builder: (context, prov, _) {
+              final types = prov.businessTypes;
+              return DropdownButtonFormField<String>(
+                value: types.any((t) => t.id == _selectedBusinessType)
+                    ? _selectedBusinessType
+                    : null,
+                decoration: const InputDecoration(
+                  labelText: 'Business Type',
+                  prefixIcon: Icon(Icons.category_outlined),
+                ),
+                items: types.map((bt) {
+                  return DropdownMenuItem(
+                    value: bt.id,
+                    child: Row(
+                      children: [
+                        Icon(bt.iconData, size: 18, color: AppColors.primary),
+                        const SizedBox(width: 8),
+                        Text(bt.displayName),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) setState(() => _selectedBusinessType = val);
+                },
+              );
+            },
+          ),
           TextField(
             controller: _phoneCtl,
             decoration: const InputDecoration(
@@ -2363,7 +2553,7 @@ class _SettingsTabState extends State<_SettingsTab>
                     context,
                     MaterialPageRoute(
                       builder: (_) => MapPickerScreen(
-                        title: 'Restaurant Location',
+                        title: 'Store Location',
                         initialLatitude: widget.restaurant.latitude != 0
                             ? widget.restaurant.latitude
                             : null,
@@ -2456,7 +2646,7 @@ class _SettingsTabState extends State<_SettingsTab>
           ),
           const SizedBox(height: 14),
           SwitchListTile(
-            title: const Text('Restaurant Open'),
+            title: const Text('Store Open'),
             subtitle: Text(_isOpen ? 'Accepting orders' : 'Currently closed'),
             value: _isOpen,
             onChanged: (val) => setState(() => _isOpen = val),
@@ -2496,6 +2686,7 @@ class _SettingsTabState extends State<_SettingsTab>
                               'estimatedDeliveryMin':
                                   int.tryParse(_deliveryMinCtl.text) ?? 30,
                               'isOpen': _isOpen,
+                              'businessType': _selectedBusinessType,
                             });
                         if (mounted)
                           Helpers.showSnackBar(context, 'Settings saved!');
@@ -2535,7 +2726,7 @@ class _SettingsTabState extends State<_SettingsTab>
                   context,
                   MaterialPageRoute(
                     builder: (_) =>
-                        const HelpSupportScreen(userType: 'Restaurant'),
+                        const HelpSupportScreen(userType: 'Store Owner'),
                   ),
                 );
               },

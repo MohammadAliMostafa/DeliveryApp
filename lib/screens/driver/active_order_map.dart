@@ -99,7 +99,7 @@ class _ActiveOrderMapState extends State<ActiveOrderMap> {
     setState(() => _isLoadingRoute = true);
 
     LatLng? target;
-    final isPickingUp = widget.order.status == OrderStatus.pickedUp;
+    final isPickingUp = widget.order.status == OrderStatus.ready;
 
     if (isPickingUp) {
       // Fetch restaurant location first since it's not in OrderModel directly
@@ -190,7 +190,7 @@ class _ActiveOrderMapState extends State<ActiveOrderMap> {
           icon: BitmapDescriptor.defaultMarkerWithHue(
             BitmapDescriptor.hueAzure,
           ),
-          infoWindow: const InfoWindow(title: 'Restaurant'),
+          infoWindow: const InfoWindow(title: 'Store'),
         ),
       );
     }

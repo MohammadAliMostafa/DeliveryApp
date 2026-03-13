@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../models/restaurant_model.dart';
 import '../models/menu_item_model.dart';
 import '../models/offer_model.dart';
+import '../models/business_type_model.dart';
+import '../models/article_model.dart';
 import '../services/firestore_service.dart';
 
 class RestaurantProvider extends ChangeNotifier {
@@ -11,6 +13,7 @@ class RestaurantProvider extends ChangeNotifier {
   List<RestaurantModel> _restaurants = [];
   List<MenuItemModel> _menuItems = [];
   List<MenuItemModel> _featuredItems = [];
+  List<ArticleModel> _articles = [];
   RestaurantModel? _selectedRestaurant;
   RestaurantModel? _ownedRestaurant; // For restaurant owners
   bool _isLoading = false;
@@ -18,6 +21,14 @@ class RestaurantProvider extends ChangeNotifier {
   String _selectedCategory = 'All';
   StreamSubscription? _restaurantsSub;
   StreamSubscription? _menuSub;
+  StreamSubscription? _articlesSub;
+
+  // ── Business Types ──
+  List<BusinessTypeModel> _businessTypes = [];
+  StreamSubscription? _businessTypesSub;
+
+  List<BusinessTypeModel> get businessTypes => _businessTypes;
+  List<ArticleModel> get articles => _articles;
 
   List<RestaurantModel> get restaurants {
     var list = _restaurants;
@@ -34,6 +45,27 @@ class RestaurantProvider extends ChangeNotifier {
           .toList();
     }
     return list;
+  }
+
+  /// Get restaurants filtered by business type
+  List<RestaurantModel> restaurantsOfType(String businessType) {
+    return _restaurants.where((r) => r.businessType == businessType).toList();
+  }
+
+  /// Get the newest added shops (sorted by createdAt)
+  List<RestaurantModel> get newestRestaurants {
+    final sorted = List<RestaurantModel>.from(_restaurants);
+    sorted.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return sorted;
+  }
+
+  /// Group all restaurants by their business type
+  Map<String, List<RestaurantModel>> get restaurantsByType {
+    final map = <String, List<RestaurantModel>>{};
+    for (final r in _restaurants) {
+      map.putIfAbsent(r.businessType, () => []).add(r);
+    }
+    return map;
   }
 
   List<MenuItemModel> get menuItems => _menuItems;
@@ -66,6 +98,43 @@ class RestaurantProvider extends ChangeNotifier {
         notifyListeners();
       },
     );
+  }
+
+  /// Start listening to all articles (Admin Announcements)
+  void listenToArticles() {
+    _articlesSub?.cancel();
+    _articlesSub = _firestoreService.getArticles().listen(
+      (list) {
+        _articles = list;
+        notifyListeners();
+      },
+      onError: (e) {
+        debugPrint('Error loading articles: $e');
+        _articles = [];
+        notifyListeners();
+      },
+    );
+  }
+
+  /// Start listening to business types
+  void listenToBusinessTypes() {
+    _businessTypesSub?.cancel();
+    _businessTypesSub = _firestoreService.getBusinessTypes().listen(
+      (list) {
+        _businessTypes = list;
+        notifyListeners();
+      },
+      onError: (e) {
+        debugPrint('Error loading business types: $e');
+        _businessTypes = [];
+        notifyListeners();
+      },
+    );
+  }
+
+  /// Seed default business types if needed
+  Future<void> seedBusinessTypes() async {
+    await _firestoreService.seedDefaultBusinessTypes();
   }
 
   Future<void> loadFeaturedItems() async {
@@ -144,12 +213,6 @@ class RestaurantProvider extends ChangeNotifier {
     double rating,
   ) async {
     await _firestoreService.addRestaurantRating(userId, restaurantId, rating);
-    // Optionally refresh the restaurant data locally
-    // For now, the stream listing all restaurants might update,
-    // but the selected restaurant is an object.
-    // If we are listening to a stream of the specific restaurant, it would update.
-    // But we are passing 'restaurant' object to the screen.
-    // We might want to reload the selected restaurant.
     final updated = await _firestoreService.getRestaurant(restaurantId);
     _selectedRestaurant = updated;
     notifyListeners();
@@ -249,6 +312,8 @@ class RestaurantProvider extends ChangeNotifier {
     _menuSub?.cancel();
     _offersSub?.cancel();
     _allOffersSub?.cancel();
+    _articlesSub?.cancel();
+    _businessTypesSub?.cancel();
     super.dispose();
   }
 }

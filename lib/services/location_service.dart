@@ -26,9 +26,17 @@ class LocationService {
     final hasPermission = await checkPermission();
     if (!hasPermission) return null;
 
-    return await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
-    );
+    try {
+      return await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+    } catch (e) {
+      // If gathering high accuracy location fails or times out, fallback to last known
+      return await Geolocator.getLastKnownPosition();
+    }
   }
 
   /// Calculate distance between two points (in meters).

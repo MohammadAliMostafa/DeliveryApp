@@ -8,6 +8,7 @@ class OfferModel {
   final List<String> itemNames;
   final List<String> itemIds;
   final double bundlePrice;
+  final double originalPrice; // Sum of individual item prices before discount
   final String imageUrl;
   final bool isActive;
   final DateTime createdAt;
@@ -21,11 +22,18 @@ class OfferModel {
     this.itemIds = const [],
     this.itemNames = const [],
     this.bundlePrice = 0.0,
+    this.originalPrice = 0.0,
     this.imageUrl = '',
     this.isActive = true,
     DateTime? createdAt,
     this.color,
   }) : createdAt = createdAt ?? DateTime.now();
+
+  bool get hasDiscount => originalPrice > 0 && originalPrice > bundlePrice;
+  int get discountPercentage => hasDiscount
+      ? ((originalPrice - bundlePrice) / originalPrice * 100).round()
+      : 0;
+  double get savedAmount => hasDiscount ? originalPrice - bundlePrice : 0;
 
   Map<String, dynamic> toMap() {
     return {
@@ -36,6 +44,7 @@ class OfferModel {
       'itemIds': itemIds,
       'itemNames': itemNames,
       'bundlePrice': bundlePrice,
+      'originalPrice': originalPrice,
       'imageUrl': imageUrl,
       'isActive': isActive,
       'createdAt': Timestamp.fromDate(createdAt),
@@ -52,12 +61,13 @@ class OfferModel {
       itemIds: List<String>.from(map['itemIds'] ?? []),
       itemNames: List<String>.from(map['itemNames'] ?? []),
       bundlePrice: (map['bundlePrice'] as num?)?.toDouble() ?? 0.0,
+      originalPrice: (map['originalPrice'] as num?)?.toDouble() ?? 0.0,
       imageUrl: map['imageUrl'] ?? '',
       isActive: map['isActive'] ?? true,
       createdAt: map['createdAt'] != null
           ? (map['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
-      color: map['color'] as int?,
+      color: map['color'] != null ? (map['color'] as num).toInt() : null,
     );
   }
 
@@ -67,6 +77,7 @@ class OfferModel {
     List<String>? itemIds,
     List<String>? itemNames,
     double? bundlePrice,
+    double? originalPrice,
     String? imageUrl,
     bool? isActive,
     int? color,
@@ -79,6 +90,7 @@ class OfferModel {
       itemIds: itemIds ?? this.itemIds,
       itemNames: itemNames ?? this.itemNames,
       bundlePrice: bundlePrice ?? this.bundlePrice,
+      originalPrice: originalPrice ?? this.originalPrice,
       imageUrl: imageUrl ?? this.imageUrl,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt,

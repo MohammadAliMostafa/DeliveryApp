@@ -6,6 +6,7 @@ class FirestoreCollections {
   static const String orders = 'orders';
   static const String offers = 'offers';
   static const String ratings = 'ratings';
+  static const String businessTypes = 'business_types';
 }
 
 // User roles
@@ -13,6 +14,7 @@ class UserRoles {
   static const String customer = 'customer';
   static const String driver = 'driver';
   static const String restaurant = 'restaurant';
+  static const String admin = 'admin';
 }
 
 // Order statuses
@@ -68,7 +70,6 @@ class DriverStatus {
 // App defaults
 class AppDefaults {
   static const double deliveryFee = 2.99;
-  static const double serviceFee = 1.50;
   static const int defaultDeliveryTimeMin = 30;
   static const String currency = '\$';
 }

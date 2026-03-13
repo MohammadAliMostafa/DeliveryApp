@@ -1,0 +1,77 @@
+Analyzing flutter_application_1...                              
+
+warning - Unused import: 'dart:typed_data' - crop_logo.dart:2:8 - unused_import
+   info - Don't invoke 'print' in production code - crop_logo.dart:10:5 - avoid_print
+   info - Don't invoke 'print' in production code - crop_logo.dart:33:3 - avoid_print
+   info - Statements in an if should be enclosed in a block - lib\screens\admin\business_types_screen.dart:314:9 - curly_braces_in_flow_control_structures
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\admin\business_types_screen.dart:315:11 - use_build_context_synchronously
+   info - Statements in an if should be enclosed in a block - lib\screens\admin\dashboard_screen.dart:227:17 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\screens\admin\dashboard_screen.dart:248:19 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\screens\admin\dashboard_screen.dart:250:19 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\screens\admin\dashboard_screen.dart:252:19 - curly_braces_in_flow_control_structures
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\screens\admin\drivers_screen.dart:56:19 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\admin\drivers_screen.dart:305:9 - use_build_context_synchronously
+   info - Statements in an if should be enclosed in a block - lib\screens\admin\offers_screen.dart:216:9 - curly_braces_in_flow_control_structures
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\admin\offers_screen.dart:217:11 - use_build_context_synchronously
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\screens\admin\orders_screen.dart:57:19 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\screens\admin\orders_screen.dart:317:23 - deprecated_member_use
+   info - Statements in an if should be enclosed in a block - lib\screens\admin\orders_screen.dart:331:27 - curly_braces_in_flow_control_structures
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\screens\admin\stores_screen.dart:154:31 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\screens\admin\users_screen.dart:67:19 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\screens\admin\users_screen.dart:313:21 - deprecated_member_use
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\screens\admin\users_screen.dart:351:21 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\auth\login_screen.dart:134:47 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\auth\login_screen.dart:135:54 - use_build_context_synchronously
+   info - Unnecessary use of multiple underscores - lib\screens\customer\all_offers_screen.dart:134:58 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\all_offers_screen.dart:139:58 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\all_offers_screen.dart:139:62 - unnecessary_underscores
+   info - Don't use 'BuildContext's across async gaps - lib\screens\customer\cart_screen.dart:325:27 - use_build_context_synchronously
+   info - Statements in an if should be enclosed in a block - lib\screens\customer\favorites_screen.dart:40:7 - curly_braces_in_flow_control_structures
+   info - Constructors for public widgets should have a named 'key' parameter - lib\screens\customer\home_screen.dart:721:9 - use_key_in_widget_constructors
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\customer\order_history_screen.dart:371:13 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\customer\order_history_screen.dart:373:30 - use_build_context_synchronously
+   info - Unnecessary use of multiple underscores - lib\screens\customer\restaurant_detail_screen.dart:128:40 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\restaurant_detail_screen.dart:130:40 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\restaurant_detail_screen.dart:130:44 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\restaurant_detail_screen.dart:750:56 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\restaurant_detail_screen.dart:761:56 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\restaurant_detail_screen.dart:761:60 - unnecessary_underscores
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\customer\restaurant_detail_screen.dart:1081:37 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\customer\restaurant_detail_screen.dart:1083:25 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\customer\restaurant_detail_screen.dart:1091:25 - use_build_context_synchronously
+   info - Unnecessary use of multiple underscores - lib\screens\customer\restaurant_detail_screen.dart:1235:50 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\restaurant_detail_screen.dart:1240:50 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\restaurant_detail_screen.dart:1240:54 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\store_detail_screen.dart:104:40 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\store_detail_screen.dart:106:40 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\store_detail_screen.dart:106:44 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\store_detail_screen.dart:608:56 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\store_detail_screen.dart:613:56 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\store_detail_screen.dart:613:60 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\store_detail_screen.dart:879:50 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\store_detail_screen.dart:884:50 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\customer\store_detail_screen.dart:884:54 - unnecessary_underscores
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\screens\driver\active_order_map.dart:138:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\screens\driver\active_order_map.dart:139:7 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\screens\driver\active_order_map.dart:140:7 - use_null_aware_elements
+   info - Don't use 'BuildContext's across async gaps - lib\screens\driver\driver_shell.dart:170:20 - use_build_context_synchronously
+   info - Statements in an if should be enclosed in a block - lib\screens\driver\driver_shell.dart:432:7 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\screens\driver\driver_shell.dart:459:9 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\screens\driver\driver_shell.dart:480:9 - curly_braces_in_flow_control_structures
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\screens\driver\driver_shell.dart:695:23 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\driver\driver_shell.dart:864:33 - use_build_context_synchronously
+   info - 'value' is deprecated and shouldn't be used. Use component accessors like .r or .g, or toARGB32 for an explicit conversion - lib\screens\restaurant\restaurant_shell.dart:1679:73 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\screens\restaurant\restaurant_shell.dart:1963:25 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\screens\restaurant\restaurant_shell.dart:1981:13 - use_build_context_synchronously
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\screens\restaurant\restaurant_shell.dart:2349:17 - deprecated_member_use
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\screens\restaurant\restaurant_shell.dart:2498:13 - deprecated_member_use
+   info - Statements in an if should be enclosed in a block - lib\screens\restaurant\restaurant_shell.dart:2537:27 - curly_braces_in_flow_control_structures
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\restaurant\restaurant_shell.dart:2537:48 - use_build_context_synchronously
+   info - Statements in an if should be enclosed in a block - lib\screens\restaurant\restaurant_shell.dart:2540:27 - curly_braces_in_flow_control_structures
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\screens\restaurant\restaurant_shell.dart:2541:29 - use_build_context_synchronously
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\screens\shared\help_support_screen.dart:123:21 - deprecated_member_use
+   info - The imported package 'web' isn't a dependency of the importing package - lib\screens\shared\map_picker_web.dart:7:8 - depend_on_referenced_packages
+   info - Unnecessary use of multiple underscores - lib\screens\shared\offers_carousel.dart:112:50 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\shared\offers_carousel.dart:115:50 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\screens\shared\offers_carousel.dart:115:54 - unnecessary_underscores
+

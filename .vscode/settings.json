@@ -1,0 +1,30 @@
+{
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-23",
+            "path": "C:\\Program Files\\Java\\jdk-23",
+            "default": true
+        }
+    ],
+    "java.jdt.ls.java.home": "C:\\Program Files\\Java\\jdk-23",
+    "java.import.gradle.java.home": "C:\\Program Files\\Java\\jdk-23",
+    "java.import.exclusions": [
+        "**/node_modules/**",
+        "**/.metadata/**",
+        "**/archetype-resources/**",
+        "**/META-INF/maven/**",
+        "**/android/**"
+    ],
+    "java.project.resourceFilters": [
+        "node_modules",
+        ".git",
+        "android"
+    ],
+    "java.configuration.updateBuildConfiguration": "disabled",
+    "java.project.importHint": "none",
+    "java.import.gradle.enabled": false,
+    "files.exclude": {
+        "**/.gradle": true
+    },
+    "cmake.sourceDirectory": "C:/flutter/New folder/flutter_application_1/windows"
+}

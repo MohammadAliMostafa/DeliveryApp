@@ -1,32 +1,49 @@
 {
-    "firestore": {
-        "rules": "firestore.rules",
-        "indexes": "firestore.indexes.json"
-    },
-    "storage": {
-        "rules": "storage.rules"
-    },
-    "flutter": {
-        "platforms": {
-            "android": {
-                "default": {
-                    "projectId": "foodhub-5e36a",
-                    "appId": "1:201127488522:android:48fcb797956ece16c9c3f3",
-                    "fileOutput": "android/app/google-services.json"
-                }
-            },
-            "dart": {
-                "lib/firebase_options.dart": {
-                    "projectId": "foodhub-5e36a",
-                    "configurations": {
-                        "android": "1:201127488522:android:48fcb797956ece16c9c3f3",
-                        "ios": "1:201127488522:ios:ab95372980082944c9c3f3",
-                        "macos": "1:201127488522:ios:503cdf0fffc7fcdcc9c3f3",
-                        "web": "1:201127488522:web:5459e0f14368fb8fc9c3f3",
-                        "windows": "1:201127488522:web:5c6f56aef32ac8aec9c3f3"
-                    }
-                }
-            }
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "foodhub-5e36a",
+          "appId": "1:201127488522:android:48fcb797956ece16c9c3f3",
+          "fileOutput": "android/app/google-services.json"
         }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "foodhub-5e36a",
+          "configurations": {
+            "android": "1:201127488522:android:48fcb797956ece16c9c3f3",
+            "ios": "1:201127488522:ios:ab95372980082944c9c3f3",
+            "macos": "1:201127488522:ios:503cdf0fffc7fcdcc9c3f3",
+            "web": "1:201127488522:web:5459e0f14368fb8fc9c3f3",
+            "windows": "1:201127488522:web:5c6f56aef32ac8aec9c3f3"
+          }
+        }
+      }
     }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run lint"
+      ]
+    }
+  ]
 }

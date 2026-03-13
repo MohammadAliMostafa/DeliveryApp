@@ -22,6 +22,11 @@ service cloud.firestore {
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == role;
     }
 
+    // Check if user is admin
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
     // Check if user is the owner of the restaurant
     function isRestaurantOwner(restaurantId) {
       return isAuthenticated() && restaurantId != '' &&
@@ -31,48 +36,53 @@ service cloud.firestore {
 
     // --- Collection Rules ---
 
-    // Users: Users can read/write their own profile
-    // Public read for basic info (like name/avatar) is often needed for UI
+    // Users: Authenticated can get profiles, but only Admin can list all. 
+    // Users can write/update their own profile.
     match /users/{userId} {
-      allow read: if isAuthenticated(); 
-      allow write: if isOwner(userId);
+      allow get: if isAuthenticated();
+      allow list: if isAdmin();
+      allow write: if isOwner(userId) || isAdmin();
     }
 
-    // Restaurants: Public read, Owner write
+    // Restaurants: Public read, Owner write, Admin full access
     match /restaurants/{restaurantId} {
       allow read: if true;
-      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
+      allow create: if isAuthenticated() && (
+        request.resource.data.ownerId == request.auth.uid || isAdmin()
+      );
       allow update: if isAuthenticated() && (
         resource.data.ownerId == request.auth.uid || 
+        isAdmin() ||
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'totalRatings']))
       );
-      allow delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+      allow delete: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || isAdmin());
     }
 
-    // Menu Items: Public read, Restaurant Owner write
+    // Menu Items: Public read, Restaurant Owner write, Admin full access
     match /menu_items/{itemId} {
       allow read: if true;
-      allow create: if isRestaurantOwner(request.resource.data.restaurantId);
-      allow update: if isRestaurantOwner(resource.data.restaurantId);
-      allow delete: if isRestaurantOwner(resource.data.restaurantId);
+      allow create: if isRestaurantOwner(request.resource.data.restaurantId) || isAdmin();
+      allow update: if isRestaurantOwner(resource.data.restaurantId) || isAdmin();
+      allow delete: if isRestaurantOwner(resource.data.restaurantId) || isAdmin();
     }
 
-    // Orders: Complex access control
+    // Orders: Complex access control + Admin full access
     match /orders/{orderId} {
       // Create: Any authenticated customer can place an order
-      allow create: if isAuthenticated() && request.resource.data.customerId == request.auth.uid;
+      allow create: if isAuthenticated() && (request.resource.data.customerId == request.auth.uid || isAdmin());
 
-      // Read: Customer, Driver (if assigned or looking for work), Restaurant Owner
+      // Read: Customer, Driver (if assigned or looking for work), Restaurant Owner, Admin
       allow read: if isAuthenticated() && (
-        resource.data.customerId == request.auth.uid || // The customer
-        resource.data.driverId == request.auth.uid ||   // The assigned driver
-        (resource.data.driverId == null && hasRole('driver')) || // Available orders for drivers
-        isRestaurantOwner(resource.data.restaurantId)   // The restaurant owner
+        resource.data.customerId == request.auth.uid ||
+        resource.data.driverId == request.auth.uid ||
+        (resource.data.driverId == null && hasRole('driver')) ||
+        isRestaurantOwner(resource.data.restaurantId) ||
+        isAdmin()
       );
 
-      // Update: Strict access control
+      // Update: Strict access control + Admin override
       allow update: if isAuthenticated() && (
-        // Allow customer to cancel if 'placed', OR to soft-delete by ONLY updating 'hiddenByCustomer' and 'updatedAt'
+        // Allow customer to cancel if 'placed', OR to soft-delete
         (resource.data.get('customerId', '') == request.auth.uid && (
           resource.data.get('status', '') == 'placed' || 
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hiddenByCustomer', 'updatedAt'])
@@ -82,18 +92,24 @@ service cloud.firestore {
         // Allow assigned driver to update (like location)
         (resource.data.get('driverId', '') == request.auth.uid) ||   
         // Allow driver to assign themselves
-        (resource.data.get('driverId', null) == null && request.resource.data.get('driverId', '') == request.auth.uid && hasRole('driver')) 
+        (resource.data.get('driverId', null) == null && request.resource.data.get('driverId', '') == request.auth.uid && hasRole('driver')) ||
+        // Admin can do anything
+        isAdmin()
       );
 
-      // Delete: Customer can delete their own orders (e.g. history cleanup)
-      allow delete: if isAuthenticated() && resource.data.customerId == request.auth.uid;
+      // Delete: Customer can delete their own orders, Admin can delete any
+      allow delete: if isAuthenticated() && (resource.data.customerId == request.auth.uid || isAdmin());
     }
     
-    // Offers: Public read, Restaurant Owner write
+    // Offers: Public read, Restaurant Owner or Admin write
     match /offers/{offerId} {
         allow read: if true;
-        allow create, update: if isAuthenticated();
-        allow delete: if isAuthenticated();
+        allow create, update: if isAuthenticated() && (
+          isRestaurantOwner(request.resource.data.restaurantId) || isAdmin()
+        );
+        allow delete: if isAuthenticated() && (
+          isRestaurantOwner(resource.data.restaurantId) || isAdmin()
+        );
     }
 
     // Ratings: User can create/update their own
@@ -101,6 +117,26 @@ service cloud.firestore {
         allow read: if true;
         allow create, update: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
         allow delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    // Business Types: Public read, Admin manage
+    match /business_types/{typeId} {
+        allow read: if true;
+        allow create: if isAuthenticated();
+        allow update, delete: if isAuthenticated() && isAdmin();
+    }
+
+    // Applications: Authenticated users can submit and read their own. Admin full manage.
+    match /applications/{applicationId} {
+        allow read: if isAuthenticated() && (resource.data.get('userId', '') == request.auth.uid || isAdmin());
+        allow create: if isAuthenticated();
+        allow update, delete: if isAdmin();
+    }
+
+    // Articles: Public read, Admin manage
+    match /articles/{articleId} {
+        allow read: if true;
+        allow write: if isAdmin();
     }
   }
 }

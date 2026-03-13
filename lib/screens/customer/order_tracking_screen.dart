@@ -146,24 +146,28 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       if (shouldFetch) {
                         _lastFetchedDriverPos = driverPos;
 
-                        if (order.status == OrderStatus.pickedUp ||
-                            order.status == OrderStatus.accepted ||
-                            order.status == OrderStatus.preparing ||
-                            order.status == OrderStatus.ready) {
-                          _loadRestaurant(order.restaurantId).then((_) {
-                            if (_restaurantPos != null) {
-                              _fetchRoute(
-                                lat,
-                                lng,
-                                _restaurantPos!.latitude,
-                                _restaurantPos!.longitude,
-                              );
-                            }
-                          });
-                        } else if (custLat != null && custLng != null) {
-                          // Delivering
-                          _fetchRoute(lat, lng, custLat, custLng);
-                        }
+                        // Defer to avoid setState during build
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (!mounted) return;
+                          if (order.status == OrderStatus.ready ||
+                              order.status == OrderStatus.accepted ||
+                              order.status == OrderStatus.preparing) {
+                            _loadRestaurant(order.restaurantId).then((_) {
+                              if (_restaurantPos != null) {
+                                _fetchRoute(
+                                  lat,
+                                  lng,
+                                  _restaurantPos!.latitude,
+                                  _restaurantPos!.longitude,
+                                );
+                              }
+                            });
+                          } else if (order.status == OrderStatus.pickedUp &&
+                              custLat != null &&
+                              custLng != null) {
+                            _fetchRoute(lat, lng, custLat, custLng);
+                          }
+                        });
                       }
                     }
 
@@ -190,7 +194,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         ),
                       );
                     }
-                    if (order.status == OrderStatus.pickedUp &&
+                    if (order.status == OrderStatus.ready &&
                         _restaurantPos != null) {
                       markers.add(
                         Marker(
@@ -522,6 +526,22 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                         ),
                       ),
                       const Divider(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Subtotal'),
+                          Text('\$${order.subtotal.toStringAsFixed(2)}'),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Delivery Fee'),
+                          Text('\$${order.deliveryFee.toStringAsFixed(2)}'),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [

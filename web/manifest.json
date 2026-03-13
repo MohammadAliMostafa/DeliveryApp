@@ -1,34 +1,34 @@
 {
-    "name": "FoodHub",
-    "short_name": "FoodHub",
+    "name": "Porter",
+    "short_name": "Porter",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#E53935",
+    "theme_color": "#E53935",
+    "description": "Delicious food, delivered fast",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
         {
-            "src": "icons/Icon-192.png",
+            "src": "assets/assets/images/logo_red.jpg",
             "sizes": "192x192",
-            "type": "image/png"
+            "type": "image/jpeg"
         },
         {
-            "src": "icons/Icon-512.png",
+            "src": "assets/assets/images/logo_red.jpg",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/jpeg"
         },
         {
-            "src": "icons/Icon-maskable-192.png",
+            "src": "assets/assets/images/logo_red.jpg",
             "sizes": "192x192",
-            "type": "image/png",
+            "type": "image/jpeg",
             "purpose": "maskable"
         },
         {
-            "src": "icons/Icon-maskable-512.png",
+            "src": "assets/assets/images/logo_red.jpg",
             "sizes": "512x512",
-            "type": "image/png",
+            "type": "image/jpeg",
             "purpose": "maskable"
         }
     ]

@@ -241,7 +241,6 @@ class CartScreen extends StatelessWidget {
                   children: [
                     _priceRow('Subtotal', cart.subtotal),
                     _priceRow('Delivery Fee', cart.deliveryFee),
-                    _priceRow('Service Fee', cart.serviceFee),
                     const Divider(height: 20),
                     _priceRow('Total', cart.total, isBold: true),
                     const SizedBox(height: 16),
@@ -315,7 +314,6 @@ class CartScreen extends StatelessWidget {
       items: List.from(cart.items),
       subtotal: cart.subtotal,
       deliveryFee: cart.deliveryFee,
-      serviceFee: cart.serviceFee,
       total: cart.total,
       deliveryAddress: auth.user!.address ?? '',
       deliveryLatitude: auth.user!.latitude,
